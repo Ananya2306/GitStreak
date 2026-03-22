@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>gitstreak</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent: #58a6ff;
+      --accent-dim: #1a2d4a;
+    }
+
+    [data-mode="dark"] {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #0d1117;
+      --border:    #30363d;
+      --border2:   #21262d;
+      --text:      #e6edf3;
+      --text-muted:#8b949e;
+      --text-dim:  #7d8590;
+    }
+
+    [data-mode="light"] {
+      --bg:        #f6f8fa;
+      --surface:   #ffffff;
+      --surface2:  #f6f8fa;
+      --border:    #d0d7de;
+      --border2:   #e8eaed;
+      --text:      #1f2328;
+      --text-muted:#636c76;
+      --text-dim:  #9198a1;
+    }
+
+    [data-mode="cream"] {
+      --bg:        #f5f0e8;
+      --surface:   #fdf8f0;
+      --surface2:  #f5f0e8;
+      --border:    #d4c9b0;
+      --border2:   #e8e0d0;
+      --text:      #2c2416;
+      --text-muted:#6b5c3e;
+      --text-dim:  #9e8c6e;
+    }
+
+    body {
+      font-family: 'Courier New', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .mode-toggle {
+      display: flex;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    .mode-btn {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      padding: 4px 12px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      transition: background 0.15s, color 0.15s;
+    }
+    .mode-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 20px;
+    }
+
+    .layout {
+      display: flex;
+      gap: 12px;
+      max-width: 1100px;
+      margin: 0 auto;
+      align-items: flex-start;
+    }
+
+    .theme-bar {
+      width: 44px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      position: sticky;
+      top: 2rem;
+    }
+    .theme-label {
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      margin-bottom: 4px;
+    }
+    .swatch {
+      width: 24px; height: 24px;
+      border-radius: 50%; cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.15s, border-color 0.15s;
+      flex-shrink: 0;
+    }
+    .swatch:hover { transform: scale(1.15); }
+    .swatch.active { border-color: var(--text); }
+
+    .form-col { flex: 1; min-width: 0; }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 12px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .section-title {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .row     { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+    .row-top { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 9px; }
+    .lbl     { font-size: 11px; color: var(--text-muted); min-width: 85px; }
+    .lbl-top { font-size: 11px; color: var(--text-muted); min-width: 85px; padding-top: 7px; }
+
+    input, select, textarea {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 6px 10px;
+      flex: 1;
+      outline: none;
+      resize: vertical;
+      transition: border-color 0.15s, background 0.2s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    select option { background: var(--surface); color: var(--text); }
+    .approach-ta { height: 52px; }
+    .code-ta     { height: 150px; }
+
+    .divider { border: none; border-top: 1px solid var(--border2); margin: 10px 0; }
+
+    .stars { display: flex; gap: 4px; flex: 1; }
+    .star {
+      width: 22px; height: 22px; cursor: pointer;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 4px; display: flex; align-items: center;
+      justify-content: center; font-size: 13px; user-select: none;
+    }
+    .star.on { background: #3d2f00; border-color: #d29922; }
+    [data-mode="light"] .star.on { background: #fff3cd; border-color: #d29922; }
+
+    .upload-area {
+      flex: 1; border: 1px dashed var(--border); border-radius: 6px;
+      padding: 10px; text-align: center; cursor: pointer;
+      transition: border-color 0.15s; position: relative;
+    }
+    .upload-area:hover { border-color: var(--accent); }
+    .upload-area input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer;
+      border: none; padding: 0; background: none; width: 100%; height: 100%;
+    }
+    .up-label { font-size: 11px; color: var(--text-dim); pointer-events: none; }
+    .upload-area.has-file .up-label { color: #3fb950; }
+    .preview-img { max-width: 100%; max-height: 70px; border-radius: 4px; margin-top: 6px; display: none; }
+
+    .push-btn {
+      font-family: 'Courier New', monospace;
+      font-size: 13px; cursor: pointer;
+      padding: 11px; border: 1px solid var(--accent);
+      border-radius: 8px; background: var(--accent-dim);
+      color: var(--accent); width: 100%; margin-top: 4px;
+      transition: background 0.15s; letter-spacing: 0.05em;
+    }
+    .push-btn:hover { background: var(--surface); }
+    .push-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .status {
+      font-size: 11px; padding: 10px 14px;
+      border-radius: 8px; margin-top: 10px;
+      display: none; line-height: 1.8;
+    }
+    .status.success { background: #0f2d1a; border: 1px solid #238636; color: #3fb950; display: block; }
+    .status.error   { background: #2d0f0f; border: 1px solid #da3633; color: #f85149; display: block; }
+    .status.loading { background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); display: block; }
+    [data-mode="light"] .status.success { background: #dafbe1; border-color: #2da44e; color: #1a7f37; }
+    [data-mode="light"] .status.error   { background: #ffebe9; border-color: #cf222e; color: #cf222e; }
+
+    .hint { font-size: 10px; color: var(--text-dim); margin-top: 3px; margin-left: 95px; line-height: 1.5; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .filename-preview {
+      font-size: 11px; color: var(--accent);
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 8px 12px;
+      margin-bottom: 10px; letter-spacing: 0.04em;
+      transition: background 0.2s;
+    }
+
+    .preview-col {
+      width: 330px; flex-shrink: 0;
+      position: sticky; top: 2rem;
+    }
+    .preview-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+      transition: background 0.2s;
+    }
+    .preview-header {
+      font-size: 10px; color: var(--text-dim);
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 10px 14px; border-bottom: 1px solid var(--border2);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .preview-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+    .preview-content {
+      padding: 14px; font-size: 11px;
+      color: var(--text-muted); line-height: 1.8;
+      max-height: 600px; overflow-y: auto;
+      background: var(--surface2);
+      transition: background 0.2s;
+    }
+    .md-block {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 10px 12px;
+      font-size: 11px; line-height: 1.9;
+      color: var(--text); margin-bottom: 10px;
+      white-space: pre; overflow-x: auto;
+    }
+    .md-h2 {
+      font-size: 12px; color: var(--text);
+      margin: 12px 0 6px; padding-bottom: 4px;
+      border-bottom: 1px solid var(--border2);
+    }
+    .md-code {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 10px 12px;
+      font-size: 11px; color: #79c0ff;
+      white-space: pre-wrap; word-break: break-word;
+      margin-bottom: 10px; max-height: 120px; overflow-y: auto;
+    }
+    [data-mode="light"] .md-code { color: #0550ae; }
+    .md-hint {
+      font-size: 11px; color: var(--text-dim);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 6px 10px; margin-bottom: 10px;
+    }
+
+    @media (max-width: 900px) {
+      .layout { flex-direction: column; }
+      .preview-col { width: 100%; position: static; }
+      .theme-bar { flex-direction: row; width: 100%; height: auto; padding: 8px 12px; }
+      .theme-label { writing-mode: horizontal-tb; transform: none; margin-bottom: 0; margin-right: 4px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>// gitstreak</h1>
+  <div class="mode-toggle">
+    <button class="mode-btn" onclick="setMode('light')">☀ light</button>
+    <button class="mode-btn active" onclick="setMode('dark')">☾ dark</button>
+    <button class="mode-btn" onclick="setMode('cream')">🫙 cream</button>
+  </div>
+</div>
+
+<div class="layout">
+
+  <div class="theme-bar">
+    <div class="theme-label">color</div>
+    <div class="swatch active" style="background:#58a6ff;" data-accent="#58a6ff" data-dim="#1a2d4a" onclick="setTheme(this)"></div>
+    <div class="swatch" style="background:#3fb950;" data-accent="#3fb950" data-dim="#0f2d1a" onclick="setTheme(this)"></div>
+    <div class="swatch" style="background:#f78166;" data-accent="#f78166" data-dim="#3d1a1a" onclick="setTheme(this)"></div>
+    <div class="swatch" style="background:#d2a8ff;" data-accent="#d2a8ff" data-dim="#2d1a4a" onclick="setTheme(this)"></div>
+    <div class="swatch" style="background:#ffa657;" data-accent="#ffa657" data-dim="#3d2a0f" onclick="setTheme(this)"></div>
+    <div class="swatch" style="background:#ff7eb6;" data-accent="#ff7eb6" data-dim="#3d1a2d" onclick="setTheme(this)"></div>
+    <div class="swatch" style="background:#39d353;" data-accent="#39d353" data-dim="#0a2a0f" onclick="setTheme(this)"></div>
+    <div class="swatch" style="background:#888;" data-accent="#888" data-dim="#2a2a2a" onclick="setTheme(this)"></div>
+  </div>
+
+  <div class="form-col">
+
+    <!-- GitHub Config -->
+    <div class="panel">
+      <div class="section-title">// github config</div>
+      <div class="row">
+        <span class="lbl">token</span>
+        <input id="token" type="password" placeholder="ghp_xxxxxxxxxxxx" />
+      </div>
+      <div class="hint">
+        <a href="https://github.com/settings/tokens" target="_blank">settings → developer settings → tokens (classic)</a> → tick "repo" → generate
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <span class="lbl">username</span>
+        <input id="username" placeholder="your-github-username" oninput="livePreview()" />
+      </div>
+      <div class="row">
+        <span class="lbl">repo name</span>
+        <input id="repo" placeholder="dsa-solutions" />
+      </div>
+      <div class="row">
+        <span class="lbl">folder</span>
+        <input id="folder" placeholder="solutions  (optional)" />
+      </div>
+    </div>
+
+    <!-- Event Config -->
+    <div class="panel">
+      <div class="section-title">// event config</div>
+      <div class="row">
+        <span class="lbl">total days</span>
+        <input id="total-days" type="number" min="1" value="30" style="max-width:70px;" oninput="livePreview()" />
+        <span style="font-size:11px;color:var(--text-dim);">days ka event hai</span>
+      </div>
+      <div class="row">
+        <span class="lbl">target ques</span>
+        <input id="target-ques" type="number" min="1" value="30" style="max-width:70px;" oninput="livePreview()" />
+        <span style="font-size:11px;color:var(--text-dim);">questions for certificate</span>
+      </div>
+    </div>
+
+    <!-- Today's Entry -->
+    <div class="panel">
+      <div class="section-title">// today's entry</div>
+
+      <div class="row">
+        <span class="lbl">your name</span>
+        <input id="name" placeholder="YourName" oninput="livePreview()" />
+      </div>
+      <div class="row">
+        <span class="lbl">date</span>
+        <input id="date" placeholder="22-3-26" style="max-width:100px;" oninput="livePreview()" />
+        <input id="day" placeholder="Day no." style="max-width:80px;" oninput="livePreview()" />
+      </div>
+
+      <hr class="divider">
+
+      <div class="row"><span class="lbl">problem</span><input id="prob" placeholder="Two Sum" oninput="livePreview()" /></div>
+      <div class="row"><span class="lbl">link</span><input id="link" placeholder="https://..." oninput="livePreview()" /></div>
+      <div class="row">
+        <span class="lbl">platform</span>
+        <select id="platform" onchange="livePreview()">
+          <option value="LeetCode">LeetCode</option>
+          <option value="GFG">GFG</option>
+          <option value="HackerRank">HackerRank</option>
+          <option value="Codeforces">Codeforces</option>
+        </select>
+      </div>
+      <div class="row">
+        <span class="lbl">difficulty</span>
+        <select id="diff" onchange="livePreview()">
+          <option value="easy">easy</option>
+          <option value="medium">medium</option>
+          <option value="hard">hard</option>
+        </select>
+      </div>
+
+      <hr class="divider">
+
+      <div class="row-top">
+        <span class="lbl-top">approach</span>
+        <textarea id="approach" class="approach-ta" placeholder="e.g. Hashmap, one pass O(n)" oninput="livePreview()"></textarea>
+      </div>
+      <div class="row"><span class="lbl">time</span><input id="tc" placeholder="O(n)" oninput="livePreview()" /></div>
+      <div class="row"><span class="lbl">space</span><input id="sc" placeholder="O(n)" oninput="livePreview()" /></div>
+
+      <hr class="divider">
+
+      <div class="row">
+        <span class="lbl">language</span>
+        <select id="lang" style="max-width:160px;" onchange="livePreview()">
+          <option value="python">python</option>
+          <option value="cpp">c++</option>
+          <option value="java">java</option>
+          <option value="javascript">javascript</option>
+          <option value="c">c</option>
+          <option value="typescript">typescript</option>
+          <option value="go">go</option>
+          <option value="rust">rust</option>
+        </select>
+      </div>
+      <div class="row-top">
+        <span class="lbl-top">code</span>
+        <textarea id="code" class="code-ta" placeholder="paste your solution here..." oninput="livePreview()"></textarea>
+      </div>
+
+      <hr class="divider">
+
+      <div class="row">
+        <span class="lbl">accepted ss</span>
+        <div class="upload-area" id="area-accepted">
+          <input type="file" accept="image/*" onchange="handleFile(this,'accepted')" />
+          <div class="up-label" id="label-accepted">click to upload accepted screenshot</div>
+          <img class="preview-img" id="preview-accepted" />
+        </div>
+      </div>
+      <div class="row">
+        <span class="lbl">code ss</span>
+        <div class="upload-area" id="area-code">
+          <input type="file" accept="image/*" onchange="handleFile(this,'code')" />
+          <div class="up-label" id="label-code">click to upload code screenshot (optional)</div>
+          <img class="preview-img" id="preview-code" />
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="row">
+        <span class="lbl">vibe</span>
+        <div class="stars" id="stars">
+          <div class="star" data-i="1">★</div><div class="star" data-i="2">★</div>
+          <div class="star" data-i="3">★</div><div class="star" data-i="4">★</div>
+          <div class="star" data-i="5">★</div>
+        </div>
+        <span id="vibe-label" style="font-size:11px;color:var(--text-dim);min-width:100px;"></span>
+      </div>
+      <div class="row">
+        <span class="lbl">streak</span>
+        <input id="streak" type="number" min="1" value="1" style="max-width:60px;" oninput="livePreview()" />
+        <span id="streak-max" style="font-size:11px;color:var(--text-dim);">/ 30</span>
+      </div>
+    </div>
+
+    <div class="filename-preview" id="filename-preview">file: YourName_DD-M-YY_Day-N.md</div>
+    <button class="push-btn" onclick="pushToGitHub()">push to github ↗</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <!-- Preview Column -->
+  <div class="preview-col">
+    <div class="preview-panel">
+      <div class="preview-header">
+        <div class="preview-dot"></div>
+        live preview
+      </div>
+      <div class="preview-content" id="live-preview-box">
+        fill in fields to see preview...
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const vibes   = ['','rough','figuring it out','solid','clean','too easy'];
+  const diffMap = { easy:'★☆☆', medium:'★★☆', hard:'★★★' };
+  let rating = 0;
+  let screenshots = { accepted: null, code: null };
+
+  function setMode(mode) {
+    document.documentElement.setAttribute('data-mode', mode);
+    const icons = { light: '☀', dark: '☾', cream: '🫙' };
+    document.querySelectorAll('.mode-btn').forEach(b => {
+      b.classList.toggle('active', b.textContent.includes(icons[mode]));
+    });
+    livePreview();
+  }
+
+  function setTheme(el) {
+    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    document.documentElement.style.setProperty('--accent', el.dataset.accent);
+    document.documentElement.style.setProperty('--accent-dim', el.dataset.dim);
+    livePreview();
+  }
+
+  document.querySelectorAll('.star').forEach(s => {
+    s.addEventListener('click', () => {
+      rating = +s.dataset.i;
+      document.querySelectorAll('.star').forEach(x => x.classList.toggle('on', +x.dataset.i <= rating));
+      document.getElementById('vibe-label').textContent = vibes[rating] || '';
+      livePreview();
+    });
+  });
+
+  function handleFile(input, type) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      screenshots[type] = { dataUrl: e.target.result };
+      document.getElementById('label-' + type).textContent = '✔ ' + file.name;
+      document.getElementById('area-' + type).classList.add('has-file');
+      const img = document.getElementById('preview-' + type);
+      img.src = e.target.result;
+      img.style.display = 'block';
+      livePreview();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function getFields() {
+    const totalDays  = document.getElementById('total-days').value  || '30';
+    const targetQues = document.getElementById('target-ques').value || '30';
+    document.getElementById('streak-max').textContent = `/ ${targetQues}`;
+    return {
+      name      : document.getElementById('name').value      || 'YourName',
+      date      : document.getElementById('date').value      || 'DD-M-YY',
+      day       : document.getElementById('day').value       || 'N',
+      prob      : document.getElementById('prob').value      || '—',
+      link      : document.getElementById('link').value,
+      platform  : document.getElementById('platform').value,
+      diff      : document.getElementById('diff').value,
+      app       : document.getElementById('approach').value  || '—',
+      tc        : document.getElementById('tc').value        || '—',
+      sc        : document.getElementById('sc').value        || '—',
+      streak    : document.getElementById('streak').value    || '1',
+      lang      : document.getElementById('lang').value,
+      code      : document.getElementById('code').value,
+      totalDays, targetQues,
+    };
+  }
+
+  const barCustom = (n, max) => {
+    const filled = Math.min(Math.round((n / max) * 12), 12);
+    return '[' + '█'.repeat(filled) + '░'.repeat(12 - filled) + ']';
+  };
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function buildMd() {
+    const f = getFields();
+    const stars    = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+    const linkLine = f.link ? `\n  link      :  ${f.link}` : '';
+    const codeSection     = f.code
+      ? `\n## 💻 Solution\n\n\`\`\`${f.lang}\n${f.code}\n\`\`\`\n` : '';
+    const acceptedSection = screenshots.accepted
+      ? `\n## ✅ Accepted\n\n![accepted](${screenshots.accepted.dataUrl})\n` : '';
+    const codeSsSection   = screenshots.code
+      ? `\n## 🖥️ Code Screenshot\n\n![code](${screenshots.code.dataUrl})\n` : '';
+
+    return `\`\`\`
+██████████████████████████████
+  PLAYER    :  ${f.name}
+  DATE      :  ${f.date}
+  DAY       :  ${String(f.day).padStart(2,'0')} / ${f.totalDays}
+██████████████████████████████
+
+  MISSION   :  ${f.prob}${linkLine}
+  PLATFORM  :  ${f.platform}
+  DIFFICULTY:  ${diffMap[f.diff]}
+
+  APPROACH  :  ${f.app}
+  TIME      :  ${f.tc}
+  SPACE     :  ${f.sc}
+
+  RESULT    :  ACCEPTED ✔
+  VIBE      :  ${stars}  ${vibes[rating]||'—'}
+  STREAK    :  ${barCustom(+f.streak, +f.targetQues)} ${f.streak}/${f.targetQues}
+██████████████████████████████
+\`\`\`
+${codeSection}${acceptedSection}${codeSsSection}`;
+  }
+
+  function livePreview() {
+    const f      = getFields();
+    const stars  = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    const linkLine = f.link ? `\n  link      :  ${f.link}` : '';
+
+    document.getElementById('filename-preview').textContent =
+      `file: ${f.name}_${f.date}_Day-${f.day}.md`;
+
+    const statCard = `██████████████████████████████
+  PLAYER    :  ${f.name}
+  DATE      :  ${f.date}
+  DAY       :  ${String(f.day).padStart(2,'0')} / ${f.totalDays}
+██████████████████████████████
+
+  MISSION   :  ${f.prob}${linkLine}
+  PLATFORM  :  ${f.platform}
+  DIFFICULTY:  ${diffMap[f.diff]}
+
+  APPROACH  :  ${escHtml(f.app)}
+  TIME      :  ${f.tc}
+  SPACE     :  ${f.sc}
+
+  RESULT    :  <span style="color:#3fb950">ACCEPTED ✔</span>
+  VIBE      :  <span style="color:${accent}">${stars}</span>  ${vibes[rating]||'—'}
+  STREAK    :  <span style="color:${accent}">${barCustom(+f.streak,+f.targetQues)}</span> ${f.streak}/${f.targetQues}
+██████████████████████████████`;
+
+    let html = `<div class="md-block">${statCard}</div>`;
+
+    if (f.code) {
+      html += `<div class="md-h2">💻 Solution</div>`;
+      html += `<div class="md-code">${escHtml(f.code.slice(0,300))}${f.code.length>300?'\n...':''}</div>`;
+    }
+    if (screenshots.accepted) {
+      html += `<div class="md-h2">✅ Accepted</div>`;
+      html += `<img src="${screenshots.accepted.dataUrl}" style="max-width:100%;border-radius:6px;margin-bottom:10px;" />`;
+    }
+    if (screenshots.code) {
+      html += `<div class="md-h2">🖥️ Code Screenshot</div>`;
+      html += `<img src="${screenshots.code.dataUrl}" style="max-width:100%;border-radius:6px;margin-bottom:10px;" />`;
+    }
+    if (!f.code && !screenshots.accepted && !screenshots.code) {
+      html += `<div class="md-hint">← code aur screenshots add karo</div>`;
+    }
+
+    document.getElementById('live-preview-box').innerHTML = html;
+  }
+
+  function setStatus(type, msg) {
+    const el = document.getElementById('status');
+    el.className = 'status ' + type;
+    el.innerHTML = msg;
+  }
+
+  async function pushToGitHub() {
+    const token    = document.getElementById('token').value.trim();
+    const username = document.getElementById('username').value.trim();
+    const repo     = document.getElementById('repo').value.trim();
+    const folder   = document.getElementById('folder').value.trim();
+    const f        = getFields();
+
+    if (!token || !username || !repo) { setStatus('error', 'token, username aur repo naam bharo pehle!'); return; }
+    if (!f.name || f.name === 'YourName') { setStatus('error', 'apna naam bharo!'); return; }
+
+    const btn = document.querySelector('.push-btn');
+    btn.disabled = true;
+    setStatus('loading', 'md file bana ke push kar raha hoon...');
+
+    const prefix   = folder ? `${folder}/` : '';
+    const fileName = `${f.name}_${f.date}_Day-${f.day}.md`;
+    const filePath = prefix + fileName;
+    const apiUrl   = `https://api.github.com/repos/${username}/${repo}/contents/${filePath}`;
+
+    try {
+      const mdContent = buildMd();
+      const encoded   = btoa(unescape(encodeURIComponent(mdContent)));
+
+      let sha;
+      const check = await fetch(apiUrl, {
+        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github+json' }
+      });
+      if (check.ok) sha = (await check.json()).sha;
+
+      const res = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `Day ${f.day} - ${f.prob} [${f.platform}]`,
+          content: encoded,
+          ...(sha ? { sha } : {})
+        })
+      });
+
+      if (res.ok) {
+        setStatus('success', `✔ ${fileName} push ho gaya! sab kuch md ke andar hai.`);
+      } else {
+        const e = await res.json();
+        setStatus('error', 'error: ' + (e.message || 'kuch gadbad hai'));
+      }
+    } catch(e) {
+      setStatus('error', 'network error: ' + e.message);
+    }
+
+    btn.disabled = false;
+  }
+
+  livePreview();
+</script>
+</body>
+</html>
