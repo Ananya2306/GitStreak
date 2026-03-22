@@ -704,6 +704,29 @@ ${codeSection}${acceptedSection}${codeSsSection}`;
     btn.disabled = false;
   }
 
+  function saveConfig() {
+    localStorage.setItem('gs_token',    document.getElementById('token').value);
+    localStorage.setItem('gs_username', document.getElementById('username').value);
+    localStorage.setItem('gs_repo',     document.getElementById('repo').value);
+    localStorage.setItem('gs_folder',   document.getElementById('folder').value);
+  }
+
+  function loadConfig() {
+    const t = localStorage.getItem('gs_token');
+    const u = localStorage.getItem('gs_username');
+    const r = localStorage.getItem('gs_repo');
+    const f = localStorage.getItem('gs_folder');
+    if (t) document.getElementById('token').value    = t;
+    if (u) document.getElementById('username').value = u;
+    if (r) document.getElementById('repo').value     = r;
+    if (f) document.getElementById('folder').value   = f;
+  }
+
+  ['token','username','repo','folder'].forEach(id => {
+    document.getElementById(id).addEventListener('input', saveConfig);
+  });
+
+  loadConfig();
   livePreview();
 </script>
 </body>
