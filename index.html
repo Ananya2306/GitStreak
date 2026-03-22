@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>gitstreak</title>
+  <title>GitStreak</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -46,7 +47,7 @@
     }
 
     body {
-      font-family: 'Courier New', monospace;
+      font-family: 'Cormorant Garamond', serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -63,10 +64,12 @@
     }
 
     h1 {
-      font-size: 12px;
-      letter-spacing: 0.15em;
-      color: var(--text-dim);
-      text-transform: uppercase;
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 2.2rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--text);
     }
 
     .mode-toggle {
@@ -114,10 +117,10 @@
       top: 2rem;
     }
     .theme-label {
-      font-size: 9px;
+      font-size: 10px;
       color: var(--text-dim);
       letter-spacing: 0.1em;
-      text-transform: uppercase;
+      text-transform: capitalize;
       writing-mode: vertical-rl;
       transform: rotate(180deg);
       margin-bottom: 4px;
@@ -144,21 +147,21 @@
     }
 
     .section-title {
-      font-size: 10px;
+      font-size: 13px;
       color: var(--text-dim);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      text-transform: capitalize;
       margin-bottom: 1rem;
     }
 
     .row     { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
     .row-top { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 9px; }
-    .lbl     { font-size: 11px; color: var(--text-muted); min-width: 85px; }
-    .lbl-top { font-size: 11px; color: var(--text-muted); min-width: 85px; padding-top: 7px; }
+    .lbl     { font-size: 13px; color: var(--text-muted); min-width: 85px; text-transform: capitalize; }
+    .lbl-top { font-size: 13px; color: var(--text-muted); min-width: 85px; padding-top: 7px; text-transform: capitalize; }
 
     input, select, textarea {
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 15px;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 6px;
@@ -201,8 +204,8 @@
     .preview-img { max-width: 100%; max-height: 70px; border-radius: 4px; margin-top: 6px; display: none; }
 
     .push-btn {
-      font-family: 'Courier New', monospace;
-      font-size: 13px; cursor: pointer;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 17px; cursor: pointer;
       padding: 11px; border: 1px solid var(--accent);
       border-radius: 8px; background: var(--accent-dim);
       color: var(--accent); width: 100%; margin-top: 4px;
@@ -295,7 +298,7 @@
 <body>
 
 <div class="top-bar">
-  <h1>// gitstreak</h1>
+  <h1>GitStreak</h1>
   <div class="mode-toggle">
     <button class="mode-btn" onclick="setMode('light')">☀ light</button>
     <button class="mode-btn active" onclick="setMode('dark')">☾ dark</button>
@@ -461,7 +464,7 @@
     </div>
 
     <div class="filename-preview" id="filename-preview">file: YourName_DD-M-YY_Day-N.md</div>
-    <button class="push-btn" onclick="pushToGitHub()">push to github ↗</button>
+    <button class="push-btn" onclick="pushToGitHub()">Push to GitHub ↗</button>
     <div class="status" id="status"></div>
   </div>
 
@@ -470,7 +473,7 @@
     <div class="preview-panel">
       <div class="preview-header">
         <div class="preview-dot"></div>
-        live preview
+        Live Preview
       </div>
       <div class="preview-content" id="live-preview-box">
         fill in fields to see preview...
