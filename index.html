@@ -518,13 +518,16 @@
   function handleFile(input, type) {
     const file = input.files[0];
     if (!file) return;
+    const ext = file.name.split('.').pop();
     const reader = new FileReader();
     reader.onload = e => {
-      screenshots[type] = { dataUrl: e.target.result };
+      const dataUrl = e.target.result;
+      const base64  = dataUrl.split(',')[1];
+      screenshots[type] = { dataUrl, base64, ext };
       document.getElementById('label-' + type).textContent = '✔ ' + file.name;
       document.getElementById('area-' + type).classList.add('has-file');
       const img = document.getElementById('preview-' + type);
-      img.src = e.target.result;
+      img.src = dataUrl;
       img.style.display = 'block';
       livePreview();
     };
@@ -562,16 +565,16 @@
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  function buildMd() {
+  function buildMd(acceptedFileName, codeFileName) {
     const f = getFields();
     const stars    = '★'.repeat(rating) + '☆'.repeat(5 - rating);
     const linkLine = f.link ? `\n  link      :  ${f.link}` : '';
     const codeSection     = f.code
       ? `\n## 💻 Solution\n\n\`\`\`${f.lang}\n${f.code}\n\`\`\`\n` : '';
-    const acceptedSection = screenshots.accepted
-      ? `\n## ✅ Accepted\n\n![accepted](${screenshots.accepted.dataUrl})\n` : '';
-    const codeSsSection   = screenshots.code
-      ? `\n## 🖥️ Code Screenshot\n\n![code](${screenshots.code.dataUrl})\n` : '';
+    const acceptedSection = acceptedFileName
+      ? `\n## ✅ Accepted\n\n![accepted](${acceptedFileName})\n` : '';
+    const codeSsSection   = codeFileName
+      ? `\n## 🖥️ Code Screenshot\n\n![code](${codeFileName})\n` : '';
 
     return `\`\`\`
 ██████████████████████████████
@@ -594,6 +597,25 @@
 ██████████████████████████████
 \`\`\`
 ${codeSection}${acceptedSection}${codeSsSection}`;
+  }
+
+  async function uploadToRepo(base, token, path, base64, message) {
+    const url = `${base}/${path}`;
+    let sha;
+    const check = await fetch(url, {
+      headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github+json' }
+    });
+    if (check.ok) sha = (await check.json()).sha;
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        Authorization: `token ${token}`,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ message, content: base64, ...(sha ? { sha } : {}) })
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'upload failed'); }
   }
 
   function livePreview() {
@@ -663,45 +685,40 @@ ${codeSection}${acceptedSection}${codeSsSection}`;
 
     const btn = document.querySelector('.push-btn');
     btn.disabled = true;
-    setStatus('loading', 'md file bana ke push kar raha hoon...');
 
+    const apiBase  = `https://api.github.com/repos/${username}/${repo}/contents`;
     const prefix   = folder ? `${folder}/` : '';
-    const fileName = `${f.name}_${f.date}_Day-${f.day}.md`;
-    const filePath = prefix + fileName;
-    const apiUrl   = `https://api.github.com/repos/${username}/${repo}/contents/${filePath}`;
+    const baseName = `${f.name}_${f.date}_Day-${f.day}`;
+    let acceptedFileName = null;
+    let codeFileName = null;
 
     try {
-      const mdContent = buildMd();
-      const encoded   = btoa(unescape(encodeURIComponent(mdContent)));
-
-      let sha;
-      const check = await fetch(apiUrl, {
-        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github+json' }
-      });
-      if (check.ok) sha = (await check.json()).sha;
-
-      const res = await fetch(apiUrl, {
-        method: 'PUT',
-        headers: {
-          Authorization: `token ${token}`,
-          Accept: 'application/vnd.github+json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: `Day ${f.day} - ${f.prob} [${f.platform}]`,
-          content: encoded,
-          ...(sha ? { sha } : {})
-        })
-      });
-
-      if (res.ok) {
-        setStatus('success', `✔ ${fileName} push ho gaya! sab kuch md ke andar hai.`);
-      } else {
-        const e = await res.json();
-        setStatus('error', 'error: ' + (e.message || 'kuch gadbad hai'));
+      if (screenshots.accepted) {
+        setStatus('loading', 'Uploading accepted screenshot...');
+        acceptedFileName = `${baseName}_accepted.${screenshots.accepted.ext}`;
+        await uploadToRepo(apiBase, token, prefix + acceptedFileName, screenshots.accepted.base64, `Day ${f.day} - accepted ss`);
       }
+
+      if (screenshots.code) {
+        setStatus('loading', 'Uploading code screenshot...');
+        codeFileName = `${baseName}_code.${screenshots.code.ext}`;
+        await uploadToRepo(apiBase, token, prefix + codeFileName, screenshots.code.base64, `Day ${f.day} - code ss`);
+      }
+
+      setStatus('loading', 'Creating md file...');
+      const fileName  = `${baseName}.md`;
+      const mdContent = buildMd(acceptedFileName, codeFileName);
+      const encoded   = btoa(unescape(encodeURIComponent(mdContent)));
+      await uploadToRepo(apiBase, token, prefix + fileName, encoded, `Day ${f.day} - ${f.prob} [${f.platform}]`);
+
+      setStatus('success',
+        `✔ Sab push ho gaya!<br>
+        📄 ${fileName}<br>
+        ${acceptedFileName ? '🖼️ ' + acceptedFileName + '<br>' : ''}
+        ${codeFileName     ? '🖼️ ' + codeFileName              : ''}`
+      );
     } catch(e) {
-      setStatus('error', 'network error: ' + e.message);
+      setStatus('error', 'Error: ' + e.message);
     }
 
     btn.disabled = false;
